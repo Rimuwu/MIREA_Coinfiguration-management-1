@@ -1,13 +1,18 @@
 import sys
 import shlex
+import os
 from typing import Optional, List, Tuple, Dict, Callable
 
 
 class ShellEmulator:
     """Эмулятор командной оболочки"""
 
-    def __init__(self, vfs_name: str = "VFS") -> None:
+    def __init__(self, vfs_name: str = "VFS", 
+                 vfs_path: Optional[str] = None, 
+                 startup_script: Optional[str] = None) -> None:
         self.vfs_name: str = vfs_name
+        self.vfs_path: Optional[str] = vfs_path
+        self.startup_script: Optional[str] = startup_script
         self.current_path: str = "/"
         self.running: bool = True
 
@@ -63,6 +68,31 @@ class ShellEmulator:
         print("Выход из эмулятора...")
         self.running = False
 
+    def execute_startup_script(self) -> None:
+        """Выполняет стартовый скрипт, если он задан"""
+        if not self.startup_script or not os.path.exists(self.startup_script):
+            return
+
+        try:
+            with open(self.startup_script, 'r', encoding='utf-8') as file:
+                lines = file.readlines()
+
+            for _, line in enumerate(lines, 1):
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+
+                print(f"{self.get_prompt()}{line}")
+
+                command, args = self.parse_command(line)
+                if command:
+                    self.execute_command(command, args)
+
+        except FileNotFoundError:
+            print(f"Ошибка: файл стартового скрипта '{self.startup_script}' не найден")
+        except Exception as e:
+            print(f"Ошибка при выполнении стартового скрипта: {e}")
+
     def execute_command(self, command: str, args: List[str]) -> None:
         if command in self.commands:
             try:
@@ -76,9 +106,15 @@ class ShellEmulator:
         """Основной цикл"""
         print(f"Эмулятор командной оболочки запущен!")
         print(f"Виртуальная файловая система: {self.vfs_name}")
-        print("Доступные команды: ls, cd, exit")
+        if self.vfs_path:
+            print(f"Путь к VFS: {self.vfs_path}")
+        print("Доступные команды: ls, cd, exit, clear")
         print("Для выхода введите 'exit'")
         print()
+
+        # Выполняем стартовый скрипт, если он есть
+        if self.startup_script:
+            self.execute_startup_script()
 
         while self.running:
             try:
@@ -91,8 +127,10 @@ class ShellEmulator:
             except KeyboardInterrupt:
                 print("\nПрерывание работы...")
                 break
+
             except EOFError:
                 print("\nЗавершение работы...")
                 break
+
             except Exception as e:
                 print(f"Неожиданная ошибка: {e}")
