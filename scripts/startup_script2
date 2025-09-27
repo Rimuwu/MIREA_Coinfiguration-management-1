@@ -1,0 +1,7 @@
+ls
+invalid_command arg1 arg2
+cd /test
+ls -l
+unknown_cmd
+cd /
+exit
