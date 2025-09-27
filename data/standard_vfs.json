@@ -1,0 +1,21 @@
+{
+  "home": {
+    "user1": {
+      "config.txt": "dXNlcjE9YWRtaW4=",
+      "data.log": "TG9nIGVudHJ5IDEKTG9nIGVudHJ5IDI="
+    },
+    "user2": {
+      "readme.txt": "VGhpcyBpcyBhIHJlYWRtZSBmaWxl"
+    }
+  },
+  "etc": {
+    "passwd": "cm9vdDp4OjA6MDpyb290Oi9yb290Oi9iaW4vYmFzaA==",
+    "hosts": "MTI3LjAuMC4xCWxvY2FsaG9zdA=="
+  },
+  "var": {
+    "log": {
+      "system.log": "U3lzdGVtIGxvZyBmaWxl"
+    }
+  },
+  "test.txt": "VGVzdCBmaWxlIGluIHJvb3Q="
+}
