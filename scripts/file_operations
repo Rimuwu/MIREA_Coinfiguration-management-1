@@ -1,0 +1,9 @@
+pwd
+ls
+cd home/user1
+ls
+cat config.json
+mkfile my.txt Данные обо мне
+cat my.txt
+touch 1 2 3 4 
+ls

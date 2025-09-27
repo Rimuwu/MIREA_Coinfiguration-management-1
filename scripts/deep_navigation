@@ -1,0 +1,8 @@
+pwd
+ls
+cd var
+ls
+cd log
+ls
+pwd
+cat system.log
