@@ -1,0 +1,40 @@
+# Демонстрация команд mv и tree
+clear
+
+# Создаем тестовую структуру
+mkdir test_folder
+mkdir test_folder/subfolder1
+mkdir test_folder/subfolder2
+mkfile test_folder/file1.txt "Содержимое файла 1"
+mkfile test_folder/subfolder1/file2.txt "Содержимое файла 2"
+mkfile root_file.txt "Корневой файл"
+
+# Показываем начальную структуру
+echo "=== Начальная структура ==="
+tree
+
+# Демонстрируем команду mv
+echo ""
+echo "=== Перемещение файла ==="
+mv root_file.txt test_folder/moved_file.txt
+tree
+
+echo ""
+echo "=== Переименование каталога ==="
+mv test_folder/subfolder2 test_folder/renamed_folder
+tree
+
+echo ""
+echo "=== Перемещение каталога ==="
+mv test_folder/subfolder1 test_folder/renamed_folder/moved_subfolder
+tree
+
+echo ""
+echo "=== Итоговая структура ==="
+tree
+
+# Показываем содержимое файлов
+echo ""
+echo "=== Содержимое файлов ==="
+cat test_folder/moved_file.txt
+cat test_folder/renamed_folder/moved_subfolder/file2.txt

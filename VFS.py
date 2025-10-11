@@ -111,3 +111,73 @@ class VFS:
             return f'/{target_path}'
         else:
             return f'{current_path}/{target_path}'
+
+    def remove_node(self, path: str) -> bool:
+        """Удаляет узел (файл или каталог) по указанному пути"""
+        path_parts = [p for p in path.split('/') if p]
+        if not path_parts:
+            return False
+
+        *dirs, name = path_parts
+        current = self.data
+
+        # Находим родительский каталог
+        for part in dirs:
+            if isinstance(current, dict) and part in current:
+                current = current[part]
+            else:
+                return False
+
+        # Удаляем узел
+        if isinstance(current, dict) and name in current:
+            del current[name]
+            return True
+        
+        return False
+
+    def move_directory(self, source_path: str, dest_path: str) -> bool:
+        """Перемещает каталог со всем содержимым"""
+        source_node = self.get_node(source_path)
+        if not isinstance(source_node, dict):
+            return False
+
+        # Создаем целевой каталог
+        if not self.create_directory(dest_path):
+            return False
+
+        # Рекурсивно копируем содержимое
+        for item_name, item_data in source_node.items():
+            item_source = f"{source_path}/{item_name}" if source_path != "/" else f"/{item_name}"
+            item_dest = f"{dest_path}/{item_name}" if dest_path != "/" else f"/{item_name}"
+            
+            if isinstance(item_data, dict):
+                # Это каталог
+                if not self.move_directory(item_source, item_dest):
+                    return False
+            else:
+                # Это файл
+                content = self.read_file(item_source)
+                if content is not None:
+                    if not self.create_file(item_dest, content):
+                        return False
+                else:
+                    return False
+
+        return True
+
+    def copy_node(self, source_path: str, dest_path: str) -> bool:
+        """Копирует узел (файл или каталог)"""
+        source_node = self.get_node(source_path)
+        if source_node is None:
+            return False
+
+        if isinstance(source_node, str):
+            # Это файл
+            content = self.read_file(source_path)
+            if content is not None:
+                return self.create_file(dest_path, content)
+        else:
+            # Это каталог
+            return self.move_directory(source_path, dest_path)
+        
+        return False

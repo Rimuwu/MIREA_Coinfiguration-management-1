@@ -25,7 +25,9 @@ class ShellEmulator:
             'pwd': self.cmd_pwd,
             'touch': self.cmd_touch,
             'mkfile': self.cmd_mkfile,
-            'mkdir': self.cmd_mkdir
+            'mkdir': self.cmd_mkdir,
+            'mv': self.cmd_mv,
+            'tree': self.cmd_tree
         }
 
     def parse_command(self, input_line: str) -> Tuple[Optional[str], List[str]]:
@@ -169,6 +171,97 @@ class ShellEmulator:
             if not success:
                 print(f"mkdir: {dirname}: Ошибка создания каталога")
 
+    def cmd_mv(self, args: List[str]) -> None:
+        """ Перемещает или переименовывает файл/каталог
+        """
+        if len(args) < 2:
+            print("mv: требуется источник и назначение")
+            return
+
+        source = args[0]
+        destination = args[1]
+        
+        source_path = self.vfs.normalize_path(self.current_path, source)
+        dest_path = self.vfs.normalize_path(self.current_path, destination)
+
+        # Проверяем существование источника
+        if not self.vfs.exists(source_path):
+            print(f"mv: {source}: Нет такого файла или каталога")
+            return
+
+        # Проверяем, не пытаемся ли переместить в себя
+        if source_path == dest_path:
+            print(f"mv: {source} и {destination} одинаковы")
+            return
+
+        # Получаем данные источника
+        source_node = self.vfs.get_node(source_path)
+        if source_node is None:
+            print(f"mv: {source}: Ошибка получения данных")
+            return
+
+        # Если назначение существует и это каталог, перемещаем внутрь него
+        if self.vfs.exists(dest_path) and self.vfs.is_directory(dest_path):
+            source_name = os.path.basename(source_path)
+            dest_path = f"{dest_path}/{source_name}" if dest_path != "/" else f"/{source_name}"
+
+        # Проверяем, не существует ли уже файл назначения
+        if self.vfs.exists(dest_path):
+            print(f"mv: {destination}: Файл или каталог уже существует")
+            return
+
+        # Создаем в новом месте
+        success = False
+        if self.vfs.is_file(source_path):
+            content = self.vfs.read_file(source_path)
+            if content is not None:
+                success = self.vfs.create_file(dest_path, content)
+        else:
+            success = self.vfs.move_directory(source_path, dest_path)
+
+        if success:
+            # Удаляем из старого места
+            self.vfs.remove_node(source_path)
+        else:
+            print(f"mv: Ошибка перемещения {source} в {destination}")
+
+    def cmd_tree(self, args: List[str]) -> None:
+        """ Отображает структуру каталогов в виде дерева
+        """
+        start_path = self.current_path
+        if args:
+            start_path = self.vfs.normalize_path(self.current_path, args[0])
+
+        if not self.vfs.exists(start_path):
+            print(f"tree: {args[0] if args else '.'}: Нет такого файла или каталога")
+            return
+
+        if not self.vfs.is_directory(start_path):
+            print(f"tree: {args[0] if args else '.'}: Это не каталог")
+            return
+
+        print(start_path if start_path != "/" else "/")
+        self._print_tree(start_path, "", True)
+
+    def _print_tree(self, path: str, prefix: str, is_last: bool) -> None:
+        """ Вспомогательный метод для рекурсивного отображения дерева
+        """
+        items = self.vfs.list_directory(path)
+        items.sort()
+
+        for i, item in enumerate(items):
+            is_last_item = (i == len(items) - 1)
+            item_path = f"{path}/{item}" if path != "/" else f"/{item}"
+            
+            # Символы для отображения дерева
+            connector = "└── " if is_last_item else "├── "
+            print(f"{prefix}{connector}{item}{'/' if self.vfs.is_directory(item_path) else ''}")
+            
+            # Рекурсивно обрабатываем подкаталоги
+            if self.vfs.is_directory(item_path):
+                extension = "    " if is_last_item else "│   "
+                self._print_tree(item_path, prefix + extension, is_last_item)
+
     def cmd_pwd(self, args: List[str]) -> None:
         print(self.current_path)
 
@@ -216,7 +309,7 @@ class ShellEmulator:
         print(f"Виртуальная файловая система: {self.vfs_name}")
         if self.vfs_path:
             print(f"Путь к VFS: {self.vfs_path}")
-        print("Доступные команды: ls, cd, cat, pwd, exit, clear")
+        print("Доступные команды: ls, cd, cat, pwd, touch, mkfile, mkdir, mv, tree, clear, exit")
         print("Для выхода введите 'exit'")
         print()
 
